@@ -51,6 +51,15 @@ supported on one image.
 
 ## Manual install on BlueOS
 
+> **Port conflict with the engineering extensions:** `blueos-site-stack` binds
+> host ports **1883**, **9001**, and **8086**. If you already have
+> `vshie/blueos-mosquitto` and/or `vshie/blueos-influxdb` installed, **stop and
+> remove them first** (BlueOS → Extensions → Installed → trash / disable).
+> Site-stack replaces both; running them together will fail with "port already
+> allocated". Persistence paths differ (`site-stack/…` vs `mosquitto` /
+> `influxdb`), so broker/Influx data from the old extensions is not migrated
+> automatically.
+
 Open BlueOS → **Extensions** → **Installed** tab → **+** (bottom right) and
 fill in the form exactly as below.
 
@@ -241,7 +250,7 @@ Docker Hub images.
 | Base OS | Debian, via official [`influxdb:1.8.10`](https://hub.docker.com/_/influxdb) |
 | MQTT broker | Debian apt package `mosquitto` → upstream **[Eclipse Mosquitto](https://mosquitto.org/)** |
 | Time-series DB | Official [`influxdb:1.8.10`](https://hub.docker.com/_/influxdb) |
-| Metrics agent | Binary copied from official [`telegraf:1.32-alpine`](https://hub.docker.com/_/telegraf) |
+| Metrics agent | Binary copied from official [`telegraf:1.32`](https://hub.docker.com/_/telegraf) (Debian image — alpine lacks `linux/arm/v7`) |
 | This repo | BlueOS wrapper (config, entrypoint, status UI, permissions labels) |
 
 Eclipse Mosquitto is dual-licensed under

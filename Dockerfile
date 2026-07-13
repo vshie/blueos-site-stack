@@ -7,7 +7,9 @@
 # (blueos-mosquitto / blueos-influxdb) stays separate for development, but
 # this image is what actually gets installed on a site.
 
-FROM telegraf:1.32-alpine AS telegraf
+# Use the Debian-based telegraf image (not alpine): alpine only publishes
+# amd64/arm64, while telegraf:1.32 also includes linux/arm/v7 for Pi 3B+/4 32-bit.
+FROM telegraf:1.32 AS telegraf
 
 FROM influxdb:1.8.10
 
