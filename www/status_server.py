@@ -24,7 +24,7 @@ REGISTER_SERVICE = {
     ),
     "icon": "mdi-database-cog",
     "company": "Community",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "webpage": "https://github.com/vshie/blueos-site-stack",
     "api": "https://github.com/vshie/blueos-site-stack/blob/main/README.md",
     "new_page": False,
