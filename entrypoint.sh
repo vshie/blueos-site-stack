@@ -23,7 +23,7 @@ sed \
 cat > /www/runtime.json <<EOF
 {
   "service": "blueos-site-stack",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "influx_version": "1.8",
   "influx_ui": "http://<blueos-ip>:8086",
   "database": "${INFLUX_DB}",
@@ -84,8 +84,8 @@ echo "Starting Telegraf → MQTT ${MQTT_HOST}:${MQTT_PORT} (${MQTT_TOPIC_PREFIX}
 telegraf --config "$TELEGRAF_CONF" &
 TELEGRAF_PID=$!
 
-echo "Starting status UI on :${STATUS_PORT}"
-python3 -m http.server "$STATUS_PORT" --bind 0.0.0.0 --directory /www &
+echo "Starting status UI (+ /register_service) on :${STATUS_PORT}"
+WWW_DIR=/www STATUS_PORT="$STATUS_PORT" python3 /www/status_server.py &
 HTTP_PID=$!
 
 echo "Starting time-from-RTC sidecar (enable=${TIME_SYNC_ENABLE:-true})..."

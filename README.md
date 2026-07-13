@@ -32,6 +32,8 @@ three-extension roadmap (`blueos-site-stack`, `blueos-site-ui`,
   misconfigure between services.
 - **Status page** on the dynamically mapped container port **80** (BlueOS
   "Open" link) showing live broker/DB status and the topic cheat-sheet.
+- **BlueOS sidebar** via `/register_service` (name **Site Stack**) — see
+  [Web Interface (HTTP Server)](https://blueos.cloud/docs/latest/development/extensions/#web-interface-http-server).
 - **Persistent data** under `/usr/blueos/extensions/site-stack/` on the
   vehicle / site computer (separate subfolders for Mosquitto and InfluxDB).
 - **Multi-arch images**: `linux/arm/v7`, `linux/arm64/v8`, `linux/amd64`.

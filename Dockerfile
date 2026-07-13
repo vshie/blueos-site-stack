@@ -62,7 +62,7 @@ ENV INFLUXDB_DB=esphome \
 
 EXPOSE 80/tcp 1883/tcp 9001/tcp 8086/tcp
 
-LABEL version="0.2.0"
+LABEL version="0.2.1"
 LABEL type="other"
 LABEL tags='["mqtt","broker","influxdb","telegraf","esphome","timeseries","automation","iot"]'
 LABEL requirements="core >= 1.1"
