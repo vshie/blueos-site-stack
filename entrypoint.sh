@@ -23,7 +23,7 @@ sed \
 cat > /www/runtime.json <<EOF
 {
   "service": "blueos-site-stack",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "influx_version": "1.8",
   "influx_ui": "http://<blueos-ip>:8086",
   "database": "${INFLUX_DB}",

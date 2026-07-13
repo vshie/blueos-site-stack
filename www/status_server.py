@@ -20,12 +20,11 @@ STATUS_PORT = int(os.environ.get("STATUS_PORT", "80"))
 REGISTER_SERVICE = {
     "name": "Site Stack",
     "description": (
-        "Mosquitto MQTT broker + InfluxDB 1.8 + Telegraf — auto-ingests "
-        "ESPHome and BlueOS extension telemetry."
+        "Message hub and history for your ESP boards — usually leave it running."
     ),
     "icon": "mdi-database-cog",
     "company": "Community",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "webpage": "https://github.com/vshie/blueos-site-stack",
     "api": "https://github.com/vshie/blueos-site-stack/blob/main/README.md",
     "new_page": False,

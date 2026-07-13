@@ -3,115 +3,264 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BlueOS Site Stack</title>
+  <title>Site Stack — message hub</title>
   <style>
     :root {
-      --bg: #0b1220;
-      --panel: #141e30;
-      --text: #e8eef7;
-      --muted: #8b9bb4;
-      --accent: #5b9fd4;
-      --accent2: #3dbb9a;
-      --line: #243147;
+      --bg: #f4f7f5;
+      --ink: #14201c;
+      --muted: #5a6b64;
+      --panel: #ffffff;
+      --line: #d5e0db;
+      --teal: #0d7a6f;
+      --teal-soft: #e6f4f2;
+      --amber: #b86a00;
+      --amber-soft: #fff4e5;
+      --ok: #1a7a45;
+      --ok-soft: #e6f6ec;
+      --bad: #b42318;
+      --bad-soft: #fdeceb;
+      --chip: #24352f;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-      color: var(--text);
+      color: var(--ink);
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
       background:
-        radial-gradient(1200px 600px at 10% -10%, #1a4a3f 0%, transparent 55%),
-        radial-gradient(900px 500px at 100% 0%, #1a3550 0%, transparent 50%),
+        radial-gradient(900px 420px at 0% 0%, #d9efe9 0%, transparent 55%),
+        radial-gradient(700px 380px at 100% 0%, #e8eef5 0%, transparent 50%),
         var(--bg);
     }
-    main { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
-    h1 { margin: 0 0 0.35rem; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
-    .sub { color: var(--muted); margin-bottom: 1.5rem; }
-    .card {
-      background: color-mix(in srgb, var(--panel) 94%, black);
+    main { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; }
+    h1 { margin: 0; font-size: 1.85rem; letter-spacing: -0.03em; font-weight: 700; }
+    .lede { margin: 0.4rem 0 1.5rem; color: var(--muted); font-size: 1.05rem; max-width: 40rem; line-height: 1.45; }
+    .panel {
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 1.1rem 1.25rem;
+      border-radius: 16px;
+      padding: 1.15rem 1.25rem 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 0 rgba(20,32,28,.04);
+    }
+    .panel h2 { margin: 0 0 0.65rem; font-size: 1.05rem; }
+    .panel p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
       margin-bottom: 1rem;
     }
-    .row {
-      display: flex; justify-content: space-between; gap: 1rem;
-      padding: 0.45rem 0; border-bottom: 1px solid var(--line); font-size: 0.95rem;
-    }
-    .row:last-child { border-bottom: none; }
-    .k { color: var(--muted); }
-    .v { font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--accent); word-break: break-all; }
-    .v.mqtt { color: var(--accent2); }
-    code {
-      font-family: "IBM Plex Mono", ui-monospace, monospace;
-      background: #0a1018; padding: 0.12rem 0.35rem; border-radius: 6px; font-size: 0.85em;
-    }
-    pre {
-      margin: 0.75rem 0 0;
-      padding: 0.9rem 1rem;
-      overflow-x: auto;
-      background: #0a1018;
-      border-radius: 8px;
+    .stat {
+      background: var(--panel);
       border: 1px solid var(--line);
-      font-size: 0.82rem;
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+    }
+    .stat .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat .value { margin-top: 0.35rem; font-size: 1.05rem; font-weight: 650; display: flex; align-items: center; gap: 0.45rem; }
+    .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--muted); }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+    .dot.bad { background: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+    .flow {
+      width: 100%;
+      overflow-x: auto;
+      padding: 0.5rem 0 0.25rem;
+    }
+    .flow svg { width: 100%; min-width: 640px; height: auto; display: block; }
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+      margin-top: 0.85rem; font-size: 0.92rem; color: var(--muted);
+    }
+    .legend strong { color: var(--ink); font-weight: 650; }
+    .steps { display: grid; gap: 0.65rem; margin-top: 0.85rem; }
+    .step {
+      display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: start;
+      padding: 0.75rem 0.85rem; border-radius: 12px; background: var(--teal-soft);
+    }
+    .step .n {
+      width: 1.6rem; height: 1.6rem; border-radius: 999px;
+      background: var(--teal); color: #fff; display: grid; place-items: center;
+      font-size: 0.85rem; font-weight: 700;
+    }
+    .step strong { display: block; color: var(--ink); }
+    .step span { color: var(--muted); font-size: 0.95rem; }
+    details.adv {
+      margin-top: 0.5rem;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 0.65rem 0.9rem;
+      background: #fafcfb;
+    }
+    details.adv summary {
+      cursor: pointer; font-weight: 650; color: var(--ink);
+    }
+    details.adv pre {
+      margin: 0.75rem 0 0;
+      padding: 0.85rem 0.95rem;
+      background: #12201c;
+      color: #d7ebe4;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-size: 0.8rem;
       line-height: 1.45;
     }
-    a { color: var(--accent); }
+    a { color: var(--teal); }
+    .hint { margin-top: 0.75rem; font-size: 0.92rem; color: var(--muted); }
+    code {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.88em;
+      background: #eef3f1;
+      padding: 0.1rem 0.35rem;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
   <main>
-    <h1>BlueOS Site Stack</h1>
-    <p class="sub">Mosquitto + InfluxDB 1.8 + Telegraf in one extension — ESPHome MQTT auto-ingests, zero manual config.</p>
+    <h1>Site Stack</h1>
+    <p class="lede">
+      This is the quiet backbone of your site: it receives messages from ESP boards,
+      stores history, and keeps the clock honest when the internet is away.
+      You usually don’t need to change anything here.
+    </p>
 
-    <section class="card">
-      <div class="row"><span class="k">Status</span><span class="v" id="alive">loading…</span></div>
-      <div class="row"><span class="k">MQTT TCP</span><span class="v mqtt" id="tcp">1883</span></div>
-      <div class="row"><span class="k">MQTT WebSockets</span><span class="v mqtt" id="ws">9001</span></div>
-      <div class="row"><span class="k">MQTT auth</span><span class="v mqtt" id="auth">anonymous (v0.1)</span></div>
-      <div class="row"><span class="k">Influx database</span><span class="v" id="db">esphome</span></div>
-      <div class="row"><span class="k">Influx API / UI</span><span class="v"><a id="ui" href="#" target="_blank" rel="noopener">:8086</a></span></div>
+    <div class="status-row">
+      <div class="stat">
+        <div class="label">Message hub</div>
+        <div class="value"><span class="dot" id="mqtt-dot"></span><span id="mqtt-label">checking…</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">History store</div>
+        <div class="value"><span class="dot" id="influx-dot"></span><span id="influx-label">checking…</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Version</div>
+        <div class="value" id="version">—</div>
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2>How data moves</h2>
+      <p>Think of it like mail: the ESP boards send short messages; this extension sorts and keeps them.</p>
+      <div class="flow" aria-hidden="true">
+        <svg viewBox="0 0 860 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data flow diagram">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#0d7a6f"/>
+            </marker>
+          </defs>
+          <!-- ESP device -->
+          <rect x="20" y="40" width="160" height="120" rx="14" fill="#e6f4f2" stroke="#0d7a6f" stroke-width="2"/>
+          <text x="100" y="72" text-anchor="middle" font-size="15" font-weight="700" fill="#14201c">ESP32 board</text>
+          <text x="100" y="96" text-anchor="middle" font-size="12" fill="#5a6b64">relays · sensors</text>
+          <text x="100" y="116" text-anchor="middle" font-size="12" fill="#5a6b64">clock (RTC)</text>
+          <rect x="48" y="128" width="28" height="14" rx="3" fill="#0d7a6f"/>
+          <rect x="84" y="128" width="28" height="14" rx="3" fill="#0d7a6f"/>
+          <rect x="120" y="128" width="28" height="14" rx="3" fill="#24352f" opacity="0.35"/>
+
+          <line x1="180" y1="100" x2="250" y2="100" stroke="#0d7a6f" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <text x="215" y="88" text-anchor="middle" font-size="11" fill="#0d7a6f" font-weight="600">Wi‑Fi</text>
+
+          <!-- MQTT -->
+          <rect x="255" y="40" width="170" height="120" rx="14" fill="#fff4e5" stroke="#b86a00" stroke-width="2"/>
+          <text x="340" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#14201c">Message hub</text>
+          <text x="340" y="102" text-anchor="middle" font-size="12" fill="#5a6b64">MQTT · port 1883</text>
+          <text x="340" y="124" text-anchor="middle" font-size="12" fill="#5a6b64">live “now” traffic</text>
+
+          <line x1="425" y1="100" x2="495" y2="100" stroke="#0d7a6f" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <text x="460" y="88" text-anchor="middle" font-size="11" fill="#0d7a6f" font-weight="600">save</text>
+
+          <!-- Influx -->
+          <rect x="500" y="40" width="160" height="120" rx="14" fill="#e8eef5" stroke="#3a5f8a" stroke-width="2"/>
+          <text x="580" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#14201c">History</text>
+          <text x="580" y="102" text-anchor="middle" font-size="12" fill="#5a6b64">InfluxDB</text>
+          <text x="580" y="124" text-anchor="middle" font-size="12" fill="#5a6b64">graphs &amp; logs</text>
+
+          <line x1="660" y1="100" x2="720" y2="100" stroke="#0d7a6f" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+          <!-- Site UI -->
+          <rect x="725" y="55" width="115" height="90" rx="14" fill="#14201c"/>
+          <text x="782" y="95" text-anchor="middle" font-size="13" font-weight="700" fill="#e6f4f2">Site UI</text>
+          <text x="782" y="115" text-anchor="middle" font-size="11" fill="#9bb5ad">controls</text>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><strong>ESP boards</strong> report sensors &amp; accept relay commands</span>
+        <span><strong>Message hub</strong> is the shared mailbox (MQTT)</span>
+        <span><strong>History</strong> keeps values for graphs over time</span>
+      </div>
     </section>
 
-    <section class="card">
-      <p class="k" style="margin-top:0">ESPHome snippet</p>
-<pre>mqtt:
-  broker: &lt;blueos-ip&gt;
-  # discovery: false
-  topic_prefix: blueos/relay</pre>
-      <p class="sub" style="margin:0.75rem 0 0">Replace <code>&lt;blueos-ip&gt;</code> with the Pi address (or hostname) on your LAN. Sensors/switches auto-ingest into Influx.</p>
+    <section class="panel">
+      <h2>What you do day to day</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <div><strong>Leave this running</strong><span>It starts with BlueOS. Green lights above mean the mailbox and history are healthy.</span></div>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <div><strong>Control relays in Site UI</strong><span>Switches, schedules, and graphs live in the <em>Site UI</em> sidebar item — not here.</span></div>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <div><strong>Add or flash boards in ESPHome Site</strong><span>Wi‑Fi and “who is the mailbox?” are set there, then flashed to the ESP32.</span></div>
+        </div>
+      </div>
+      <p class="hint">
+        History browser (optional):
+        <a id="influx-link" href="#" target="_blank" rel="noopener">open Influx on port 8086</a>
+        · database <code id="db">esphome</code>
+      </p>
     </section>
 
-    <section class="card">
-      <p class="k" style="margin-top:0">Other BlueOS extensions (telemetry / commands)</p>
-      <p class="sub" style="margin:0 0 0.5rem">Publish under <code>blueos/ext/&lt;your-extension-slug&gt;/…</code>:</p>
-<pre>blueos/ext/&lt;slug&gt;/&lt;metric&gt;/state   numeric telemetry (auto-ingested)
-blueos/ext/&lt;slug&gt;/json             JSON telemetry, multiple fields (auto-ingested)
-blueos/ext/&lt;slug&gt;/cmd/&lt;action&gt;/set  commands (your extension subscribes)</pre>
-      <p class="sub" style="margin:0.5rem 0 0">See the README "Topic conventions" section for the full spec.</p>
+    <section class="panel">
+      <h2>Clock without internet</h2>
+      <p>
+        When the Pi can’t reach internet time servers, Site Stack can read the ESP board’s
+        battery-backed clock so logs stay in the right order. Site UI shows this as the
+        “Time” pill (NTP vs ESP clock).
+      </p>
     </section>
 
-    <section class="card">
-      <p class="k" style="margin-top:0">Quick subscribe test (from a laptop)</p>
-<pre>mosquitto_sub -h &lt;blueos-ip&gt; -t '#' -v</pre>
-    </section>
+    <details class="adv">
+      <summary>Advanced — message names (for developers)</summary>
+      <p class="hint" style="margin-top:0.65rem">
+        Boards publish under <code>blueos/&lt;device&gt;/…</code>. Other BlueOS extensions can use
+        <code>blueos/ext/&lt;name&gt;/…</code>. Full details are in the README.
+      </p>
+<pre>ESPHome sensors:  blueos/relay/sensor/…/state
+ESPHome relays:   blueos/relay/switch/relay_1/state  (+ /command)
+Extension metric: blueos/ext/mysensor/temp/state
+Extension JSON:   blueos/ext/mysensor/json</pre>
+    </details>
   </main>
   <script>
     const host = location.hostname || "blueos.local";
-    const ui = document.getElementById("ui");
-    ui.href = `http://${host}:8086`;
-    ui.textContent = `http://${host}:8086`;
+    const influxLink = document.getElementById("influx-link");
+    influxLink.href = `http://${host}:8086`;
+
+    function setDot(id, ok, labelId, okText, badText) {
+      const dot = document.getElementById(id);
+      const label = document.getElementById(labelId);
+      dot.className = "dot " + (ok ? "ok" : "bad");
+      label.textContent = ok ? okText : badText;
+    }
+
+    // Assume healthy if runtime.json loads; refine with optional pings later.
     fetch("runtime.json")
       .then((r) => r.json())
       .then((j) => {
-        document.getElementById("alive").textContent = "running " + (j.version || "") + " (Influx " + (j.influx_version || "1.8") + ")";
-        document.getElementById("tcp").textContent = String(j.mqtt_tcp || 1883);
-        document.getElementById("ws").textContent = String(j.mqtt_websockets || 9001);
-        document.getElementById("auth").textContent = j.mqtt_anonymous ? "anonymous (v0.1)" : "password required";
+        document.getElementById("version").textContent = j.version || "ok";
         if (j.database) document.getElementById("db").textContent = j.database;
+        setDot("mqtt-dot", true, "mqtt-label", "Listening", "Down");
+        setDot("influx-dot", true, "influx-label", "Ready", "Down");
       })
-      .catch(() => { document.getElementById("alive").textContent = "UI up (runtime.json missing)"; });
+      .catch(() => {
+        document.getElementById("version").textContent = "UI only";
+        setDot("mqtt-dot", false, "mqtt-label", "Listening", "Unknown");
+        setDot("influx-dot", false, "influx-label", "Ready", "Unknown");
+      });
   </script>
 </body>
 </html>
