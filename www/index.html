@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BlueOS Site Stack</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #141e30;
+      --text: #e8eef7;
+      --muted: #8b9bb4;
+      --accent: #5b9fd4;
+      --accent2: #3dbb9a;
+      --line: #243147;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1a4a3f 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #1a3550 0%, transparent 50%),
+        var(--bg);
+    }
+    main { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
+    h1 { margin: 0 0 0.35rem; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); margin-bottom: 1.5rem; }
+    .card {
+      background: color-mix(in srgb, var(--panel) 94%, black);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .row {
+      display: flex; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 0; border-bottom: 1px solid var(--line); font-size: 0.95rem;
+    }
+    .row:last-child { border-bottom: none; }
+    .k { color: var(--muted); }
+    .v { font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--accent); word-break: break-all; }
+    .v.mqtt { color: var(--accent2); }
+    code {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      background: #0a1018; padding: 0.12rem 0.35rem; border-radius: 6px; font-size: 0.85em;
+    }
+    pre {
+      margin: 0.75rem 0 0;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      background: #0a1018;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>BlueOS Site Stack</h1>
+    <p class="sub">Mosquitto + InfluxDB 1.8 + Telegraf in one extension — ESPHome MQTT auto-ingests, zero manual config.</p>
+
+    <section class="card">
+      <div class="row"><span class="k">Status</span><span class="v" id="alive">loading…</span></div>
+      <div class="row"><span class="k">MQTT TCP</span><span class="v mqtt" id="tcp">1883</span></div>
+      <div class="row"><span class="k">MQTT WebSockets</span><span class="v mqtt" id="ws">9001</span></div>
+      <div class="row"><span class="k">MQTT auth</span><span class="v mqtt" id="auth">anonymous (v0.1)</span></div>
+      <div class="row"><span class="k">Influx database</span><span class="v" id="db">esphome</span></div>
+      <div class="row"><span class="k">Influx API / UI</span><span class="v"><a id="ui" href="#" target="_blank" rel="noopener">:8086</a></span></div>
+    </section>
+
+    <section class="card">
+      <p class="k" style="margin-top:0">ESPHome snippet</p>
+<pre>mqtt:
+  broker: &lt;blueos-ip&gt;
+  # discovery: false
+  topic_prefix: blueos/relay</pre>
+      <p class="sub" style="margin:0.75rem 0 0">Replace <code>&lt;blueos-ip&gt;</code> with the Pi address (or hostname) on your LAN. Sensors/switches auto-ingest into Influx.</p>
+    </section>
+
+    <section class="card">
+      <p class="k" style="margin-top:0">Other BlueOS extensions (telemetry / commands)</p>
+      <p class="sub" style="margin:0 0 0.5rem">Publish under <code>blueos/ext/&lt;your-extension-slug&gt;/…</code>:</p>
+<pre>blueos/ext/&lt;slug&gt;/&lt;metric&gt;/state   numeric telemetry (auto-ingested)
+blueos/ext/&lt;slug&gt;/json             JSON telemetry, multiple fields (auto-ingested)
+blueos/ext/&lt;slug&gt;/cmd/&lt;action&gt;/set  commands (your extension subscribes)</pre>
+      <p class="sub" style="margin:0.5rem 0 0">See the README "Topic conventions" section for the full spec.</p>
+    </section>
+
+    <section class="card">
+      <p class="k" style="margin-top:0">Quick subscribe test (from a laptop)</p>
+<pre>mosquitto_sub -h &lt;blueos-ip&gt; -t '#' -v</pre>
+    </section>
+  </main>
+  <script>
+    const host = location.hostname || "blueos.local";
+    const ui = document.getElementById("ui");
+    ui.href = `http://${host}:8086`;
+    ui.textContent = `http://${host}:8086`;
+    fetch("runtime.json")
+      .then((r) => r.json())
+      .then((j) => {
+        document.getElementById("alive").textContent = "running " + (j.version || "") + " (Influx " + (j.influx_version || "1.8") + ")";
+        document.getElementById("tcp").textContent = String(j.mqtt_tcp || 1883);
+        document.getElementById("ws").textContent = String(j.mqtt_websockets || 9001);
+        document.getElementById("auth").textContent = j.mqtt_anonymous ? "anonymous (v0.1)" : "password required";
+        if (j.database) document.getElementById("db").textContent = j.database;
+      })
+      .catch(() => { document.getElementById("alive").textContent = "UI up (runtime.json missing)"; });
+  </script>
+</body>
+</html>
