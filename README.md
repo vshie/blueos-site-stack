@@ -51,17 +51,28 @@ supported on one image.
 
 ## Manual install on BlueOS
 
-> **Port conflict with the engineering extensions:** `blueos-site-stack` binds
-> host ports **1883**, **9001**, and **8086**. If you already have
-> `vshie/blueos-mosquitto` and/or `vshie/blueos-influxdb` installed, **stop and
-> remove them first** (BlueOS → Extensions → Installed → trash / disable).
-> Site-stack replaces both; running them together will fail with "port already
-> allocated". Persistence paths differ (`site-stack/…` vs `mosquitto` /
-> `influxdb`), so broker/Influx data from the old extensions is not migrated
-> automatically.
+Install **only** through BlueOS → **Extensions** → **Installed** → **+**.
+Do **not** use a bare `docker run` — that skips Kraken registration, so the
+extension will not appear under Installed and will **not** respawn after a
+BlueOS reboot.
 
-Open BlueOS → **Extensions** → **Installed** tab → **+** (bottom right) and
-fill in the form exactly as below.
+### 0. Remove conflicting extensions first
+
+`blueos-site-stack` binds host ports **1883**, **9001**, and **8086**. If you
+already have either of these installed, **disable or uninstall them first**:
+
+| Old extension | Image | Conflict |
+|---------------|-------|----------|
+| Mosquitto MQTT Broker | `vshie/blueos-mosquitto` | `:1883`, `:9001` |
+| InfluxDB + Telegraf | `vshie/blueos-influxdb` | `:8086` |
+
+Site-stack replaces both. Persistence paths differ (`site-stack/…` vs
+`mosquitto` / `influxdb`), so old broker/Influx data is not migrated
+automatically.
+
+### 1. Fill the install form
+
+Open BlueOS → **Extensions** → **Installed** → **+** (bottom right) and enter:
 
 | Field | Value |
 |-------|--------|
@@ -70,11 +81,12 @@ fill in the form exactly as below.
 | **Docker image** | `vshie/blueos-site-stack` |
 | **Docker tag** | `main` |
 
-> Use a released SemVer tag (e.g. `0.1.0`) instead of `main` once one exists —
-> SemVer tags also get `:latest` from CI.
+> Prefer a SemVer tag (e.g. `0.1.0`) once one exists — SemVer tags also get
+> `:latest` from CI. Until then use `main`.
 
-**Custom settings** — paste this JSON verbatim (stable MQTT + Influx ports,
-persistent data binds, status UI on a BlueOS-assigned port):
+### 2. Custom settings (permissions JSON)
+
+Paste this JSON verbatim into **Custom settings**:
 
 ```json
 {
@@ -116,8 +128,21 @@ persistent data binds, status UI on a BlueOS-assigned port):
 }
 ```
 
-After it installs and starts, the extension appears in the BlueOS sidebar.
-Open it to view the status page. From a laptop on the same network:
+Then confirm / install and wait for the image pull to finish.
+
+### 3. Verify it is installed and will survive reboot
+
+1. **Installed tab** — you should see **Site Stack (MQTT + InfluxDB)** listed
+   and enabled (same place as Cockpit). If it is missing, the install did not
+   go through Kraken; uninstall any hand-started container and use the **+**
+   form above.
+2. **Open** — use the extension’s Open / status link (dynamic host port for
+   container port `80`) to load the status page.
+3. **Survive reboot** — only Kraken-registered extensions restart with BlueOS.
+   After a reboot, confirm the card is still under Installed and that
+   `:1883` / `:8086` are listening again.
+
+Quick checks from a laptop on the same LAN:
 
 ```bash
 mosquitto_sub -h <blueos-ip> -t '#' -v
