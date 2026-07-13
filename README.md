@@ -216,6 +216,54 @@ against `config/telegraf.conf` in this repo (or run your own Telegraf
 `inputs.mqtt_consumer` block against `<blueos-ip>:1883` from your own
 extension) — the broker is shared and open on the LAN by design.
 
+## Time sync — true timestamps without internet
+
+Raspberry Pi has no battery-backed RTC. If the site has no internet NTP at
+boot, the host clock is whatever `fake-hwclock` restored (stale) — every
+InfluxDB/Telegraf timestamp is wrong for as long as that lasts. This
+extension runs a small sidecar (`scripts/time_from_rtc.py`, stdlib-only, no
+extra pip deps) alongside Mosquitto/InfluxDB/Telegraf that:
+
+1. Subscribes to `blueos/+/sensor/rtc_epoch/state` (any ESPHome node with a
+   real-time clock, e.g. `blueos-relay`'s DS3231 — see
+   `blueos-site-esphome`'s `RTC Epoch` sensor) via the `mosquitto_sub` CLI
+   already bundled in this image.
+2. Every 30s, checks whether *this container* can reach the internet (TCP
+   probes to a few public resolvers). If it can, it assumes the host's own
+   NTP client is doing its job and does **not** touch the clock.
+3. If there's no internet **and** a recent RTC sample is available **and**
+   the drift exceeds 5s, it corrects the host clock with `date -u -s
+   @<epoch>`.
+4. Publishes its status to `blueos/ext/site-stack/json` (auto-ingested into
+   InfluxDB via the existing "other extensions" JSON convention below) with
+   fields `time_source` (`ntp` / `esp-rtc` / `esp-rtc-ok` /
+   `esp-rtc-stale` / `esp-rtc-correcting` / `unknown`), `internet`,
+   `drift_seconds`, `rtc_sample_age_seconds`, `clock_set_attempted`,
+   `clock_set_ok`.
+
+**Setting the host clock requires the `CAP_SYS_TIME` Linux capability**,
+which this extension's default permissions request (`"CapAdd":
+["SYS_TIME"]`). Without it, the sidecar still runs and reports accurate
+status — it just can't actually correct the clock, and logs a clear message
+the first time it tries. If you installed this extension before this
+capability was added, edit its **Custom settings** in BlueOS → Extensions to
+add `"CapAdd": ["SYS_TIME"]` under `HostConfig` and reinstall/recreate the
+container to pick it up (a plain image update/restart does **not** change
+an already-created container's capabilities).
+
+Tunables (env vars, all optional): `TIME_SYNC_ENABLE` (default `true`),
+`TIME_SYNC_DRIFT_THRESHOLD_S` (default `5`), `TIME_SYNC_CHECK_INTERVAL_S`
+(default `30`), `TIME_SYNC_MAX_SAMPLE_AGE_S` (default `600`),
+`TIME_SYNC_INTERNET_HOSTS` (default a few public DNS resolvers, `host:port`
+comma-separated), `TIME_SYNC_TOPIC_FILTER` (default
+`<prefix>+/sensor/rtc_epoch/state`).
+
+Quick check from a laptop on the same LAN:
+
+```bash
+mosquitto_sub -h <blueos-ip> -t 'blueos/ext/site-stack/json' -v
+```
+
 ## Zero-config wiring
 
 Because Mosquitto, InfluxDB, and Telegraf are all in **one** container:

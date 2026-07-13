@@ -42,7 +42,8 @@ COPY config/influxdb.conf /etc/influxdb/influxdb.conf
 COPY config/mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY www/ /www/
 COPY entrypoint.sh /blueos-entrypoint.sh
-RUN chmod +x /blueos-entrypoint.sh /influxdb-entrypoint.sh
+COPY scripts/time_from_rtc.py /opt/blueos/time_from_rtc.py
+RUN chmod +x /blueos-entrypoint.sh /influxdb-entrypoint.sh /opt/blueos/time_from_rtc.py
 
 # Zero-config defaults — Mosquitto, InfluxDB, and Telegraf all run in this
 # one container, so Telegraf talks to both over localhost. No cross-container
@@ -54,11 +55,14 @@ ENV INFLUXDB_DB=esphome \
     MQTT_PORT=1883 \
     MQTT_TOPIC_PREFIX=blueos/ \
     MOSQUITTO_DATA=/mosquitto/data \
-    STATUS_PORT=80
+    STATUS_PORT=80 \
+    TIME_SYNC_ENABLE=true \
+    TIME_SYNC_DRIFT_THRESHOLD_S=5 \
+    TIME_SYNC_CHECK_INTERVAL_S=30
 
 EXPOSE 80/tcp 1883/tcp 9001/tcp 8086/tcp
 
-LABEL version="0.1.0"
+LABEL version="0.2.0"
 LABEL type="other"
 LABEL tags='["mqtt","broker","influxdb","telegraf","esphome","timeseries","automation","iot"]'
 LABEL requirements="core >= 1.1"
@@ -73,6 +77,7 @@ LABEL permissions='\
   },\
   "HostConfig": {\
     "ExtraHosts": ["host.docker.internal:host-gateway"],\
+    "CapAdd": ["SYS_TIME"],\
     "PortBindings": {\
       "80/tcp": [{"HostPort": ""}],\
       "1883/tcp": [{"HostPort": "1883"}],\

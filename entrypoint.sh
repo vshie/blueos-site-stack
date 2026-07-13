@@ -88,10 +88,15 @@ echo "Starting status UI on :${STATUS_PORT}"
 python3 -m http.server "$STATUS_PORT" --bind 0.0.0.0 --directory /www &
 HTTP_PID=$!
 
+echo "Starting time-from-RTC sidecar (enable=${TIME_SYNC_ENABLE:-true})..."
+MQTT_HOST=127.0.0.1 MQTT_PORT="$MQTT_PORT" MQTT_TOPIC_PREFIX="$MQTT_TOPIC_PREFIX" \
+  python3 /opt/blueos/time_from_rtc.py &
+TIME_SYNC_PID=$!
+
 shutdown() {
   echo "Shutting down..."
-  kill "$TELEGRAF_PID" "$HTTP_PID" "$INFLUX_PID" "$MQTT_PID" 2>/dev/null || true
-  wait "$TELEGRAF_PID" "$HTTP_PID" "$INFLUX_PID" "$MQTT_PID" 2>/dev/null || true
+  kill "$TELEGRAF_PID" "$HTTP_PID" "$INFLUX_PID" "$MQTT_PID" "$TIME_SYNC_PID" 2>/dev/null || true
+  wait "$TELEGRAF_PID" "$HTTP_PID" "$INFLUX_PID" "$MQTT_PID" "$TIME_SYNC_PID" 2>/dev/null || true
 }
 trap shutdown INT TERM
 
