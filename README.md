@@ -1,5 +1,11 @@
 # BlueOS Site Stack — Mosquitto + InfluxDB 1.8 + Telegraf
 
+> **Deprecated.** Superseded by **Site Steward** ([`vshie/blueos-site-steward`](https://github.com/vshie/blueos-site-steward)).
+> Install that single extension instead — it merges this repo and
+> `blueos-site-ui` into one tabbed portal (Controls / System / Graphs) with
+> the same Mosquitto + InfluxDB 1.8 + Telegraf + time-from-RTC pipeline.
+> This repo remains for reference; images stay pullable at their last tags.
+
 A single BlueOS extension that runs **Mosquitto**, **InfluxDB 1.8**, and
 **Telegraf** together in one container on the onboard computer (Raspberry Pi
 3B+ / 4 / 5). Install it once and ESPHome devices on the LAN publish MQTT
